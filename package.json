@@ -1,0 +1,24 @@
+{
+  "name": "opencode-file-browser",
+  "version": "1.0.0",
+  "description": "A file-browser plugin for opencode: navigate, open, and search project files from the CLI.",
+  "type": "module",
+  "main": "index.ts",
+  "files": [
+    "index.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "opencode",
+    "plugin",
+    "file",
+    "browser",
+    "files",
+    "cli"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.1.34"
+  }
+}

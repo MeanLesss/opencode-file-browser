@@ -1,60 +1,63 @@
 # opencode-file-browser
 
-A tiny opencode plugin that adds a **file browser** to the opencode CLI: browse
-the project tree, open files, and search files by name — all from the chat/TUI.
+A file-browser plugin for **opencode v2**. It adds an arrow-key file dialog to
+the terminal UI plus file tools for the agent.
 
-## Tools
-
-| Tool           | What it does                                                            |
-| -------------- | ----------------------------------------------------------------------- |
-| `file_tree`    | List the project (or a subfolder) as a tree, with depth + dotfile options |
-| `file_open`    | Read and return the text content of a file inside the project            |
-| `file_search`  | Find files by name (case-insensitive substring), scoped to a folder      |
-
-All paths are resolved relative to the project root and are validated so the
-tools cannot escape the project directory.
+- **TUI dialog** — `/files` (or Command Palette → **File browser**) opens a
+  navigable dialog. Arrow keys move, type to search, Enter opens a folder or
+  file, and **Set this folder as project root** changes the browser root.
+- **Agent tools** — `file_tree`, `file_open`, and `file_search`.
+- All paths are resolved inside the project root and cannot escape it.
 
 ## Install
 
-### Global (all projects)
+### From a local folder (global)
 
-Copy the plugin into opencode's global plugin directory:
+Add the directory to your global `opencode.json(c)`:
 
-- Linux/macOS: `~/.config/opencode/plugins/`
-- Windows: `%USERPROFILE%\.config\opencode\plugins\` (or `$XDG_CONFIG_HOME/opencode/plugins/`)
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": ["D:\\Side Work\\opencode-file-browser"]
+}
+```
+
+Install its dependencies once:
 
 ```sh
-mkdir -p ~/.config/opencode/plugins
-cp index.ts ~/.config/opencode/plugins/opencode-file-browser.ts
+cd opencode-file-browser
+npm install
 ```
 
-The plugin imports `@opencode-ai/plugin`; make sure your config directory has a
-`package.json` with that dependency (opencode runs `bun install` at startup):
-
-```json
-{ "dependencies": { "@opencode-ai/plugin": "1.1.34" } }
-```
-
-Restart opencode to load it.
-
-### Per project
-
-Drop the same file into `.opencode/plugins/` of the project instead.
+Restart opencode (config is loaded at startup).
 
 ### From npm
 
-```json
-{ "plugin": ["opencode-file-browser"] }
+```jsonc
+{
+  "plugins": ["opencode-file-browser"]
+}
 ```
 
 ## Usage
 
-In the opencode TUI, ask naturally — the agent will call the tools:
+- Type `/files` (alias `/browse`) in the TUI, or press `Ctrl+P` and choose
+  **File browser**.
+- In the dialog:
+  - **↑ / ↓** move, type to search, **Enter** opens.
+  - Folder entries open the next directory.
+  - File entries show the file content.
+  - **Set this folder as project root** stores the current folder as the
+    browser root for later sessions.
+- Ask the agent to "show the project tree", "open package.json", or "find
+  files named config" to use the tools.
 
-- "show me the project tree"
-- "browse the src folder"
-- "open package.json"
-- "find files named *config*"
+## Structure
+
+```text
+src/index.ts   server part: file_tree, file_open, file_search
+src/tui.ts     TUI part: /files dialog with arrow-key navigation
+```
 
 ## Disclaimer
 

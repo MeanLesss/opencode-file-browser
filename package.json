@@ -1,7 +1,7 @@
 {
   "name": "opencode-file-browser",
   "version": "1.0.0",
-  "description": "A file-browser plugin for opencode: browse a project with an arrow-key dialog and expose file tools to the agent.",
+  "description": "Arrow-key file browser and project-scoped file tools for the opencode TUI.",
   "type": "module",
   "exports": {
     "./server": "./src/index.ts",
@@ -9,19 +9,38 @@
   },
   "files": [
     "src",
+    "assets",
     "README.md",
     "LICENSE"
   ],
   "keywords": [
     "opencode",
-    "plugin",
-    "file",
-    "browser",
-    "files",
+    "opencode-plugin",
+    "opencode-tui",
+    "file-browser",
+    "file-manager",
+    "file-tree",
+    "tui",
+    "terminal-ui",
     "cli",
-    "tui"
+    "developer-tools",
+    "ai-agent",
+    "ai-coding",
+    "typescript"
   ],
   "license": "MIT",
+  "author": "MeanLesss",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MeanLesss/opencode-file-browser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MeanLesss/opencode-file-browser/issues"
+  },
+  "homepage": "https://github.com/MeanLesss/opencode-file-browser#readme",
+  "engines": {
+    "opencode": ">=1.19.5 <2"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },

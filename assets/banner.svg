@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" fill="none" role="img" aria-label="opencode-file-browser">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1020"/>
+      <stop offset="0.55" stop-color="#0D1117"/>
+      <stop offset="1" stop-color="#101A2E"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="520" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#58A6FF"/>
+      <stop offset="1" stop-color="#3FB950"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(1050 70) rotate(120) scale(420 300)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#58A6FF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#58A6FF" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#FFFFFF" fill-opacity="0.06"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="320" rx="22" fill="url(#bg)"/>
+  <rect width="1280" height="320" rx="22" fill="url(#glow)"/>
+  <rect width="1280" height="320" rx="22" fill="url(#dots)"/>
+  <rect x="1" y="1" width="1278" height="318" rx="21" stroke="#FFFFFF" stroke-opacity="0.09"/>
+
+  <g transform="translate(64 64)">
+    <rect width="56" height="56" rx="14" fill="#111827" stroke="#30363D"/>
+    <path d="M10 18C10 15.7909 11.7909 14 14 14H24.5L29 19.5H42C44.2091 19.5 46 21.2909 46 23.5V38C46 40.2091 44.2091 42 42 42H14C11.7909 42 10 40.2091 10 38V18Z" fill="url(#accent)" fill-opacity="0.9"/>
+    <path d="M10 26H46" stroke="#0D1117" stroke-opacity="0.28" stroke-width="2"/>
+  </g>
+
+  <text x="140" y="94" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20" fill="#58A6FF">/files</text>
+  <text x="140" y="132" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="44" font-weight="700" fill="#F0F6FC">opencode-file-browser</text>
+  <text x="140" y="172" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" fill="#9CA3AF">Arrow-key file browsing and project-scoped file tools for the opencode TUI.</text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14">
+    <rect x="140" y="202" width="126" height="34" rx="17" fill="#58A6FF" fill-opacity="0.12" stroke="#58A6FF" stroke-opacity="0.35"/>
+    <text x="203" y="224" text-anchor="middle" fill="#A5D6FF">TUI dialog</text>
+
+    <rect x="276" y="202" width="292" height="34" rx="17" fill="#3FB950" fill-opacity="0.10" stroke="#3FB950" stroke-opacity="0.32"/>
+    <text x="422" y="224" text-anchor="middle" fill="#7EE787">file_tree · file_open · file_search</text>
+
+    <rect x="578" y="202" width="142" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.04" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <text x="649" y="224" text-anchor="middle" fill="#C9D1D9">opencode 1.x</text>
+
+    <rect x="730" y="202" width="80" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.04" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <text x="770" y="224" text-anchor="middle" fill="#C9D1D9">MIT</text>
+  </g>
+
+  <g opacity="0.85">
+    <rect x="1006" y="64" width="210" height="132" rx="14" fill="#0D1117" stroke="#30363D"/>
+    <rect x="1006" y="64" width="210" height="30" rx="14" fill="#161B22"/>
+    <circle cx="1024" cy="79" r="4" fill="#F85149"/>
+    <circle cx="1038" cy="79" r="4" fill="#D29922"/>
+    <circle cx="1052" cy="79" r="4" fill="#3FB950"/>
+    <text x="1024" y="119" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#8B949E">D:/project/src</text>
+    <text x="1024" y="142" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#C9D1D9">  Switch project</text>
+    <text x="1024" y="163" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#C9D1D9">  Copy path</text>
+    <text x="1024" y="184" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#C9D1D9">  New terminal</text>
+    <rect x="1018" y="130" width="190" height="18" rx="4" fill="#58A6FF" fill-opacity="0.14"/>
+  </g>
+
+  <rect x="64" y="270" width="1152" height="1" fill="#FFFFFF" fill-opacity="0.08"/>
+  <text x="64" y="298" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" fill="#6E7681">Browse · switch projects · copy paths · open terminals · read files safely</text>
+  <text x="1216" y="298" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" fill="#6E7681">github.com/MeanLesss/opencode-file-browser</text>
+</svg>

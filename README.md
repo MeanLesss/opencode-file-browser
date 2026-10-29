@@ -1,17 +1,67 @@
-# opencode-file-browser
+<p align="center">
+  <img src="assets/banner.svg" alt="opencode-file-browser — arrow-key file browsing for the opencode TUI" width="100%">
+</p>
 
-A file-browser plugin for **opencode 1.x** that adds an arrow-key file dialog to
-the terminal UI and gives the agent three safe, project-scoped file tools.
+<h1 align="center">opencode-file-browser</h1>
 
-- **`/files` dialog** — navigate folders, fuzzy-search entries, preview files,
-  switch the project directory, copy the current path, or open a new terminal
-  there.
-- **Agent tools** — `file_tree`, `file_open`, and `file_search`, all confined to
-  the project root.
-- **No configuration beyond the plugin path** — the browser remembers the last
-  folder you used per project.
+<p align="center">
+  A fast, keyboard-first file browser for the <strong>opencode</strong> terminal UI —
+  plus three project-scoped file tools for the agent.
+</p>
 
-Tested with opencode **1.19.5** on Windows. It also works on macOS and Linux.
+<p align="center">
+  <a href="https://github.com/MeanLesss/opencode-file-browser/actions/workflows/ci.yml"><img src="https://github.com/MeanLesss/opencode-file-browser/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/MeanLesss/opencode-file-browser/stargazers"><img src="https://img.shields.io/github/stars/MeanLesss/opencode-file-browser?style=flat-square&logo=github" alt="GitHub stars"></a>
+  <a href="https://github.com/MeanLesss/opencode-file-browser/commits/main"><img src="https://img.shields.io/github/last-commit/MeanLesss/opencode-file-browser?style=flat-square" alt="Last commit"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/MeanLesss/opencode-file-browser?style=flat-square" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/opencode-1.x-3FB950?style=flat-square" alt="opencode 1.x">
+  <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+</p>
+
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#usage">Usage</a> ·
+  <a href="#agent-tools">Agent tools</a> ·
+  <a href="#troubleshooting">Troubleshooting</a> ·
+  <a href="#contributing">Contributing</a>
+</p>
+
+---
+
+## Why this plugin
+
+- **No mouse, no typing paths.** Open `/files`, use the arrow keys, and press
+  `Enter`.
+- **Switch projects without restarting.** Move the active session to another
+  folder, or open a new one there.
+- **Everything stays in the project.** The agent tools resolve paths inside the
+  project root and reject `..` escapes.
+- **One folder, two halves.** The same plugin adds the TUI dialog and the agent
+  tools; no extra services, no build step, no global install.
+- **Works where you work.** Windows, macOS, and Linux clipboard and terminal
+  fallbacks are built in.
+
+<p align="center">
+  <img src="assets/demo.svg" alt="Illustration of the /files dialog" width="100%">
+</p>
+
+<p align="center"><sub>Illustration of the <code>/files</code> dialog. Your theme and terminal may look different.</sub></p>
+
+---
+
+## Features
+
+| Feature | What it does |
+| --- | --- |
+| `/files` dialog | Arrow-key navigation, fuzzy search, folder traversal, file preview. |
+| Switch project | Moves the current session to the selected folder; opens a new session from the home screen. |
+| Copy path | Copies the folder with OSC52 and a native clipboard fallback. |
+| New terminal | Launches a fresh `opencode` in the selected folder. |
+| `file_tree` | Project tree with depth and hidden-file controls. |
+| `file_open` | Reads text files with binary detection and a size cap. |
+| `file_search` | Case-insensitive file-name search with a result cap. |
+| Remembered roots | Reopens the last folder you used for each project. |
+| Safe by default | Agent tools cannot escape the project root. |
 
 ---
 
@@ -19,37 +69,35 @@ Tested with opencode **1.19.5** on Windows. It also works on macOS and Linux.
 
 | Requirement | Notes |
 | --- | --- |
-| opencode **1.x** | Uses the `@opencode-ai/plugin` v1 API. opencode 2.x is not supported. |
-| Node.js + npm | Only needed once, to install the plugin's dependencies. opencode itself runs on Bun. |
-| A terminal with OSC52 or a native clipboard | Copy-path falls back to PowerShell/`clip.exe`, `pbcopy`, `wl-copy`, `xclip`, or `xsel`. |
-| `opencode` on `PATH` | Only needed for **Open in a new terminal**. Set `OPENCODE_BIN` to override. |
+| opencode **1.x** | Built against `@opencode-ai/plugin` 1.19.5. opencode 2.x is not supported. |
+| Node.js + npm | Needed once to install the plugin's dependencies. |
+| `opencode` on `PATH` | Only for **Open in a new terminal**. Override with `OPENCODE_BIN`. |
+| A clipboard tool | Optional. Copy-path falls back to PowerShell/`clip.exe`, `pbcopy`, `wl-copy`, `xclip`, or `xsel`. |
 
 ---
 
 ## Install
 
-There are two pieces, and each reads a different config file:
+There are two halves, and opencode reads them from different config files:
 
-| Piece | What it adds | Config file |
+| Half | Adds | Config file |
 | --- | --- | --- |
-| Server plugin | `file_tree`, `file_open`, `file_search` | `opencode.json` / `opencode.jsonc` |
-| TUI plugin | `/files` dialog and its actions | `tui.json` / `tui.jsonc` |
+| Server plugin | `file_tree`, `file_open`, `file_search` | `opencode.json(c)` |
+| TUI plugin | `/files` dialog and its actions | `tui.json(c)` |
 
-Both point at the same plugin directory. Add the plugin to **both** files if you
-want the dialog and the agent tools.
+Point both files at the same plugin folder if you want both halves.
 
 Config locations:
 
-- **Global** (all projects): `~/.config/opencode/` — on Windows this is
+- **Global:** `~/.config/opencode/` — on Windows,
   `C:\Users\<you>\.config\opencode\`.
-- **Project** (one project): `opencode.json(c)` and `tui.json(c)` in the project
-  root, or inside a `.opencode/` folder.
+- **Project:** `opencode.json(c)` and `tui.json(c)` in the project root, or
+  inside `.opencode/`.
 
-> Paths must be **absolute** (`D:/tools/opencode-file-browser`,
-> `/home/me/opencode-file-browser`) or start with `.` (relative to the config
-> file). `~/...` is treated as an npm package name, so expand it yourself.
+> Paths must be **absolute** or start with `.` (relative to the config file).
+> `~/...` is treated as an npm package name, so expand it manually.
 
-### 1. Get the plugin
+### 1. Clone and install dependencies
 
 **Windows (PowerShell):**
 
@@ -67,12 +115,11 @@ cd ~/opencode-file-browser
 npm install
 ```
 
-Already have the repo? Just run `npm install` inside it once.
+Already have the repo? Run `npm install` inside it once.
 
 ### 2. Enable the agent tools
 
-Add the plugin to your global `opencode.jsonc` (create the file if it does not
-exist):
+Add the plugin to your global `opencode.jsonc`:
 
 ```jsonc
 {
@@ -81,7 +128,7 @@ exist):
 }
 ```
 
-On macOS/Linux use the absolute path instead, for example
+On macOS or Linux use your absolute path, for example
 `"/home/you/opencode-file-browser"`.
 
 ### 3. Enable the `/files` dialog
@@ -97,16 +144,14 @@ Add the same path to your global `tui.json`:
 
 ### 4. Restart opencode
 
-Config and plugins are loaded at startup. Quit opencode completely and start it
-again, then type `/files`.
+Quit opencode completely and start it again. Then type `/files`.
 
-That is the whole install. No environment variables, no build step, no global
+That is the whole install: no environment variables, no build step, no global
 npm package.
 
-### Project-local install (optional)
+### Project-local install
 
-If you only want the plugin in one repository, put the plugin folder inside that
-repository and reference it relatively:
+Prefer to keep the plugin inside one repository?
 
 ```text
 my-project/
@@ -146,9 +191,15 @@ Once the package is published, opencode can install it on demand:
 }
 ```
 
-The package is **not published yet**, so use the local-folder install above.
+The package is **not published yet** — use the local-folder install above.
 
-### Updating
+### Verify the install
+
+1. Restart opencode.
+2. Type `/files`; the dialog should open.
+3. Ask the agent: “show the project tree”. It should call `file_tree`.
+
+### Updating and uninstalling
 
 ```sh
 cd /path/to/opencode-file-browser
@@ -158,10 +209,8 @@ npm install
 
 Restart opencode after updating.
 
-### Uninstalling
-
-Remove the path from `opencode.jsonc` and `tui.json`, restart opencode, and
-delete the cloned folder.
+To uninstall, remove the path from `opencode.jsonc` and `tui.json`, restart
+opencode, and delete the folder.
 
 ---
 
@@ -172,149 +221,168 @@ delete the cloned folder.
 Any of these opens the dialog:
 
 - Type `/files` in the prompt.
-- Type an alias: `/browse`, `/fb`, or `/file`.
-- Press `Ctrl+P`, then choose **File browser** (group **File**).
-- Type `files` in the command palette.
+- Use an alias: `/browse`, `/fb`, or `/file`.
+- Press `Ctrl+P` and choose **File browser** (group **File**).
 
-The dialog opens at:
-
-- the directory of the current session, when you are in a session, or
-- the current project directory, when you are on the home screen.
-
-The folder you navigate to is remembered per project, so `/files` reopens where
-you left off.
+The dialog starts at the current session's directory, or the project directory
+on the home screen. The folder you last used is remembered per project.
 
 ### Keys
 
 | Key | Action |
 | --- | --- |
-| `↑` / `↓` | Move the selection |
+| `Up` / `Down` | Move the selection |
 | Type | Fuzzy-search titles and categories |
-| `Enter` | Open the selected folder, preview a file, or run an action |
+| `Enter` | Open a folder, preview a file, or run an action |
 | `Esc` | Close the dialog |
 
-Entries are grouped into **Navigate**, **Actions**, **Folders**, and **Files**.
+Entries are grouped as **Actions**, **Navigate**, **Folders**, and **Files**.
 
-### Actions
+### Actions in detail
 
-Each directory shows these actions at the top:
+**Switch project to this folder**
 
-- **Switch project to this folder**
-  - In a session: moves the current session to the chosen folder. Local file
-    changes are not moved; the session simply points at the new directory.
-  - On the home screen (or if the move endpoint is unavailable): opens a new
-    session in that folder.
-  - The switched folder becomes the browser's remembered root for the old
-    project, so `/files` keeps opening there.
-- **Copy this folder path**
-  - Copies the absolute path using OSC52, then also tries the native clipboard
-    (`Set-Clipboard`/`clip.exe`, `pbcopy`, `wl-copy`, `xclip`, `xsel`).
-  - Shows a warning toast with the path if no clipboard is available.
-- **Open in a new terminal**
-  - Starts a fresh `opencode` in that folder.
-  - Windows: `cmd /c start` (the new window inherits the folder as its cwd).
-  - macOS: Terminal via `osascript`.
-  - Linux: the first available of `x-terminal-emulator`, `gnome-terminal`,
-    `konsole`, `xterm`.
-  - Override the executable with `OPENCODE_BIN=/path/to/opencode`.
+- In a session: moves the current session to the selected folder. Local file
+  changes stay where they are; the session simply points at the new directory.
+- On the home screen, or when the move endpoint is unavailable: opens a new
+  session in that folder.
+- The selected folder becomes the remembered browser root for the old project.
 
-Folders open in place. Files show a preview dialog with their content (binary
-files are labelled, and text is capped at 80 KB). Closing the preview returns to
-the same folder.
+**Copy this folder path**
 
-### Agent tools
+- Copies the absolute path with OSC52, then also tries the native clipboard.
+- Windows: `Set-Clipboard`, then `clip.exe`.
+- macOS: `osascript` / `pbcopy`.
+- Linux/Wayland: `wl-copy`; X11: `xclip` or `xsel`.
+- If nothing is available, a toast shows the path so you can copy it manually.
 
-Ask the agent naturally, or call the tools directly:
+**Open in a new terminal**
 
-- **`file_tree`** — project tree.
-  - `path` (optional): relative folder to start from.
-  - `depth` (optional string, default `"3"`): clamp to 0–10.
-  - `showHidden` (optional `"true"`/`"false"`): include dotfiles.
-  - Example prompts: “show the project tree”, “list `src` two levels deep”.
-- **`file_open`** — read a text file.
-  - `path` (required): relative to the project root.
-  - Binary files return a size label instead of bytes. Text is truncated at
-    80 KB.
-  - Example prompts: “open `package.json`”, “show me `src/tui.ts`”.
-- **`file_search`** — find files by name.
-  - `query` (required): case-insensitive substring of the file name.
-  - `path` (optional): restrict to a relative subfolder.
-  - `showHidden` (optional): include dotfiles.
-  - Results are capped at 200.
-  - Example prompts: “find files named config”, “search for `*.test.ts` in `src`”.
+- Starts a fresh `opencode` in the selected folder.
+- Windows: `cmd /c start`.
+- macOS: Terminal via `osascript`.
+- Linux: the first available of `x-terminal-emulator`, `gnome-terminal`,
+  `konsole`, `xterm`.
+- Set `OPENCODE_BIN` to use a different executable.
 
-All tool paths are resolved inside the project root (`worktree` when in a git
-repo, otherwise `directory`). Attempts to escape with `..` are rejected.
+**Folders and files**
 
-### Example session
+- Folders open in place.
+- Files show a preview dialog. Binary files are labelled; text is capped at
+  80 KB. Closing the preview returns to the same folder.
+
+---
+
+## Agent tools
+
+Ask the agent naturally, or call the tools directly.
+
+| Tool | Arguments | Behavior |
+| --- | --- | --- |
+| `file_tree` | `path?`, `depth?` (default `"3"`, max `10`), `showHidden?` | Prints the project tree from the project root. |
+| `file_open` | `path` (required) | Returns file text; detects binary files; truncates at 80 KB. |
+| `file_search` | `query` (required), `path?`, `showHidden?` | Case-insensitive file-name search, capped at 200 results. |
+
+Example prompts:
 
 ```text
-/files
-  → switch to ../my-other-project
-  → copy path
-  → open src/
-  → preview tui.ts
+show the project tree
+list src two levels deep, including hidden files
+open package.json
+show me src/tui.ts
+find files named config
+search for tui in src
 ```
 
-Then ask the agent: “show me the tree of the project, skip hidden files”.
-
----
-
-## Troubleshooting
-
-- **`/files` does not appear.**
-  - The TUI plugin goes in `tui.json`, not only `opencode.jsonc`.
-  - Check the path is absolute or starts with `.`.
-  - Restart opencode after editing config.
-- **The agent tools are missing.**
-  - Add the plugin to `opencode.json(c)` as well. That file controls server
-    plugins.
-- **`Could not switch to ...`.**
-  - The folder must exist and be readable.
-  - Session moves require a recent 1.x build; older builds fall back to opening
-    a new session automatically.
-- **Copy says “Clipboard unavailable”.**
-  - The toast includes the path so it can be copied manually.
-  - On Linux install `wl-clipboard`, `xclip`, or `xsel`.
-- **“Open in a new terminal” fails.**
-  - Make sure `opencode` is on `PATH`, or set `OPENCODE_BIN`.
-- **Plugin fails to load.**
-  - Run `npm install` inside the plugin folder.
-  - Check the log at `~/.local/share/opencode/log/opencode.log` (Windows:
-    `C:\Users\<you>\.local\share\opencode\log\opencode.log`) for lines starting
-    with `[tui.plugin]`.
-- **JSON path errors on Windows.**
-  - Escape backslashes (`"D:\\tools\\plugin"`) or use forward slashes
-    (`"D:/tools/plugin"`).
-
----
-
-## Development
-
-```sh
-npm install
-npm run typecheck
-```
-
-- `src/index.ts` is the server half (`file_tree`, `file_open`, `file_search`).
-- `src/tui.ts` is the TUI half (`/files` dialog and actions).
-- `package.json` exposes them as `./server` and `./tui`, which is what opencode
-  loads.
-
-To test changes in a real opencode instance, point both config files at this
-folder and restart opencode after editing the plugin.
+All tool paths are resolved inside the project root (`worktree` in a git repo,
+otherwise `directory`). Paths that try to escape with `..` are rejected.
 
 ---
 
 ## Security and scope
 
 - Agent tools cannot read outside the project root.
-- The TUI browser itself can browse any readable directory on the machine,
-  including outside the project, because you are choosing folders manually.
-- “Switch project” changes the working directory of the current session; it does
-  not copy, delete, or move files.
-- Nothing is sent anywhere; the plugin only reads the filesystem, writes to the
-  clipboard, and launches a terminal.
+- The TUI browser itself can browse any readable directory, because you choose
+  folders manually.
+- “Switch project” changes the session's working directory; it does not copy,
+  delete, or move files.
+- The plugin only reads the filesystem, writes to the clipboard, and launches a
+  terminal. Nothing is sent anywhere.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+| --- | --- |
+| `/files` does not appear | The TUI half goes in `tui.json`, not only `opencode.jsonc`. Check the path is absolute or starts with `.`. Restart opencode. |
+| Agent tools are missing | Add the plugin to `opencode.json(c)` too; that file controls server plugins. |
+| `Could not switch to ...` | Make sure the folder exists and is readable. Older builds fall back to opening a new session. |
+| Copy says “Clipboard unavailable” | Install a clipboard tool, or copy the path from the toast. |
+| New terminal does not open | Put `opencode` on `PATH`, or set `OPENCODE_BIN`. |
+| Plugin fails to load | Run `npm install` in the plugin folder and check `~/.local/share/opencode/log/opencode.log` for `[tui.plugin]` lines. |
+| JSON path errors on Windows | Escape backslashes (`"D:\\tools\\plugin"`) or use forward slashes (`"D:/tools/plugin"`). |
+
+---
+
+## How it works
+
+```text
+src/index.ts   server half: file_tree, file_open, file_search
+src/tui.ts     TUI half: /files dialog and actions
+```
+
+`package.json` exposes the two entry points as `./server` and `./tui`, which is
+what opencode loads. The browser remembers the last folder per project through
+opencode's key-value storage. Session switches use opencode's control-plane move
+endpoint and fall back to creating a new session in the target folder.
+
+### Development
+
+```sh
+npm install
+npm run typecheck
+```
+
+To test changes in a real opencode instance, point both config files at this
+folder and restart opencode.
+
+---
+
+## Roadmap
+
+- Publish to npm for one-line installs.
+- Syntax-highlighted file previews.
+- Optional configurable keybindings.
+- More file actions (rename, delete, create).
+
+Have an idea? Open an issue — small, focused suggestions are easiest to ship.
+
+---
+
+## Contributing
+
+Contributions are welcome. Please:
+
+1. Fork the repo and create a branch.
+2. Keep changes focused and update the README if behavior changes.
+3. Run `npm run typecheck`.
+4. Open a pull request describing the problem and the fix.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full setup and review notes.
+
+---
+
+## Support the project
+
+If this plugin saves you time, a star helps other opencode users find it.
+Questions and ideas are welcome in
+[Discussions](https://github.com/MeanLesss/opencode-file-browser/discussions),
+and bugs belong in [Issues](https://github.com/MeanLesss/opencode-file-browser/issues).
+
+<a href="https://github.com/MeanLesss/opencode-file-browser/stargazers">
+  <img src="https://img.shields.io/github/stars/MeanLesss/opencode-file-browser?style=social" alt="Star this repo">
+</a>
 
 ---
 
@@ -323,9 +391,8 @@ folder and restart opencode after editing the plugin.
 This software is provided **"AS IS"**, free of charge, for professional and
 personal use. It is released under the MIT license, which carries no warranty
 of any kind. **The author and contributors accept no responsibility or
-liability for any harm, loss, data corruption, or damage** arising from the
-use of this software, to the fullest extent permitted by law. Use at your own
-risk.
+liability for any harm, loss, data corruption, or damage** arising from the use
+of this software, to the fullest extent permitted by law. Use at your own risk.
 
 ## License
 

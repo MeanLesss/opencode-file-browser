@@ -305,9 +305,16 @@ on the home screen. The folder you last used is remembered per project.
 | Key | Action |
 | --- | --- |
 | `Up` / `Down` | Move the selection |
+| `Left` | Go to the parent folder |
+| `Right` | Enter the selected folder |
 | Type | Fuzzy-search titles and categories |
-| `Enter` | Open a folder, preview a file, or run an action |
-| `Esc` | Close the dialog |
+| `Enter` | On a folder: choose **Navigate**, **Open in a new terminal**, or **Cancel**. On a file: preview it. On an action: run it. |
+| `Esc` | Close the dialog, or cancel the folder prompt |
+
+`Left` and `Right` navigate folders when the search box is empty. While you are
+typing a query, they keep their normal text-cursor behavior.
+
+The browser opens in the extra-large dialog for more room.
 
 Entries are grouped as **Actions**, **Navigate**, **Folders**, and **Files**.
 
@@ -340,7 +347,12 @@ Entries are grouped as **Actions**, **Navigate**, **Folders**, and **Files**.
 
 **Folders and files**
 
-- Folders open in place.
+- Press `Right` on a folder to enter it directly.
+- Press `Enter` on a folder to choose:
+  - **Navigate into folder** — open it in the browser.
+  - **Open in a new terminal** — start a fresh `opencode` there.
+  - **Cancel** — stay where you are.
+- Press `Left` to go back to the parent folder.
 - Files show a preview dialog. Binary files are labelled; text is capped at
   80 KB. Closing the preview returns to the same folder.
 

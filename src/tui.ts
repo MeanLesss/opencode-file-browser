@@ -10,6 +10,14 @@ type Option = {
   category?: string
 }
 
+type View = {
+  dir: string
+  parent: string
+  filter: string
+  selected: Option
+  active: boolean
+}
+
 const MAX_OPEN_BYTES = 80 * 1024
 const MAX_ENTRIES = 500
 
@@ -131,6 +139,8 @@ async function openInNewTerminal(dir: string): Promise<boolean> {
 }
 
 const tui: TuiPlugin = async (api) => {
+  let view: View | undefined
+
   const currentRoot = (): string => {
     const route = api.route.current
     if (route.name === "session" && typeof route.params?.sessionID === "string") {
@@ -229,6 +239,54 @@ const tui: TuiPlugin = async (api) => {
     }
   }
 
+  const promptFolder = (folder: string, fromDir: string): void => {
+    let decided = false
+    const choices: Option[] = [
+      { title: "Navigate into folder", value: "nav", category: "Folder", description: folder },
+      {
+        title: "Open in a new terminal",
+        value: "terminal",
+        category: "Folder",
+        description: `opencode in ${folder}`,
+      },
+      { title: "Cancel", value: "cancel", category: "Folder", description: "Stay in the current folder" },
+    ]
+
+    api.ui.dialog.replace(
+      () =>
+        api.ui.DialogSelect<string>({
+          title: `Folder — ${basename(folder)}`,
+          placeholder: "Choose what to do",
+          options: choices,
+          onSelect: (option: TuiDialogSelectOption<string>) => {
+            decided = true
+            if (option.value === "nav") {
+              browse(folder)
+              return
+            }
+            if (option.value === "terminal") {
+              browse(fromDir)
+              void openInNewTerminal(folder).then((opened) => {
+                api.ui.toast({
+                  title: "File browser",
+                  message: opened
+                    ? `Opening a terminal in ${folder}`
+                    : `Could not open a terminal. Run: opencode "${folder}"`,
+                  variant: opened ? "success" : "error",
+                })
+              })
+              return
+            }
+            browse(fromDir)
+          },
+        }),
+      () => {
+        if (decided) return
+        setTimeout(() => browse(fromDir), 0)
+      },
+    )
+  }
+
   const browse = (start: string): void => {
     const dir = resolve(start)
     let entries: Option[]
@@ -266,52 +324,86 @@ const tui: TuiPlugin = async (api) => {
     })
     options.push(...entries)
 
-    api.ui.dialog.replace(() =>
-      api.ui.DialogSelect<string>({
-        title: `Files — ${dir}`,
-        placeholder: "Search folders and files",
-        options,
-        onSelect: (option: TuiDialogSelectOption<string>) => {
-          const value = option.value
-          if (value === "up") {
-            browse(parent)
-            return
-          }
-          if (value === "set-root") {
-            void switchProject(dir)
-            return
-          }
-          if (value === "copy-path") {
-            void copyPath(dir).then((copied) => {
-              api.ui.toast({
-                title: "File browser",
-                message: copied ? `Copied ${dir}` : `Clipboard unavailable. Path: ${dir}`,
-                variant: copied ? "success" : "warning",
+    const current: View = {
+      dir,
+      parent,
+      filter: "",
+      selected: options[0],
+      active: true,
+    }
+    view = current
+
+    api.ui.dialog.replace(
+      () =>
+        api.ui.DialogSelect<string>({
+          title: `Files — ${dir}`,
+          placeholder: "Search folders and files",
+          options,
+          onMove: (option: TuiDialogSelectOption<string>) => {
+            if (view === current) current.selected = option
+          },
+          onFilter: (query: string) => {
+            if (view === current) current.filter = query
+          },
+          onSelect: (option: TuiDialogSelectOption<string>) => {
+            if (view !== current) return
+            const value = option.value
+            if (value === "up") {
+              browse(parent)
+              return
+            }
+            if (value === "set-root") {
+              void switchProject(dir)
+              return
+            }
+            if (value === "copy-path") {
+              void copyPath(dir).then((copied) => {
+                api.ui.toast({
+                  title: "File browser",
+                  message: copied ? `Copied ${dir}` : `Clipboard unavailable. Path: ${dir}`,
+                  variant: copied ? "success" : "warning",
+                })
               })
-            })
-            return
-          }
-          if (value === "new-terminal") {
-            void openInNewTerminal(dir).then((opened) => {
-              api.ui.toast({
-                title: "File browser",
-                message: opened ? `Opening a terminal in ${dir}` : `Could not open a terminal. Run: opencode "${dir}"`,
-                variant: opened ? "success" : "error",
+              return
+            }
+            if (value === "new-terminal") {
+              void openInNewTerminal(dir).then((opened) => {
+                api.ui.toast({
+                  title: "File browser",
+                  message: opened ? `Opening a terminal in ${dir}` : `Could not open a terminal. Run: opencode "${dir}"`,
+                  variant: opened ? "success" : "error",
+                })
               })
-            })
-            return
-          }
-          if (value.startsWith("dir:")) {
-            browse(value.slice(4))
-            return
-          }
-          if (value.startsWith("file:")) {
-            showFile(value.slice(5), dir)
-          }
-        },
-      }),
+              return
+            }
+            if (value.startsWith("dir:")) {
+              promptFolder(value.slice(4), dir)
+              return
+            }
+            if (value.startsWith("file:")) {
+              current.active = false
+              showFile(value.slice(5), dir)
+            }
+          },
+        }),
+      () => {
+        current.active = false
+      },
     )
-    api.ui.dialog.setSize("large")
+    api.ui.dialog.setSize("xlarge")
+  }
+
+  const back = (): void | false => {
+    if (!api.ui.dialog.open || !view?.active || view.filter.length > 0) return false
+    if (view.parent === view.dir) return false
+    browse(view.parent)
+  }
+
+  const forward = (): void | false => {
+    if (!api.ui.dialog.open || !view?.active || view.filter.length > 0) return false
+    const option = view.selected
+    if (!option || !option.value.startsWith("dir:")) return false
+    browse(option.value.slice(4))
   }
 
   api.keymap.registerLayer({
@@ -330,8 +422,26 @@ const tui: TuiPlugin = async (api) => {
           browse(storedRoot(root))
         },
       },
+      {
+        name: "file-browser.back",
+        title: "File browser: back",
+        desc: "Go to the parent folder",
+        category: "File",
+        run: back,
+      },
+      {
+        name: "file-browser.forward",
+        title: "File browser: open folder",
+        desc: "Enter the selected folder",
+        category: "File",
+        run: forward,
+      },
     ],
-    bindings: api.tuiConfig.keybinds.gather("file-browser.palette", ["file-browser.open"]),
+    bindings: [
+      ...api.tuiConfig.keybinds.gather("file-browser.palette", ["file-browser.open"]),
+      { key: "left", desc: "Back", group: "File browser", cmd: "file-browser.back", preventDefault: false },
+      { key: "right", desc: "Open folder", group: "File browser", cmd: "file-browser.forward", preventDefault: false },
+    ],
   })
 }
 

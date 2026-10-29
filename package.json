@@ -10,7 +10,10 @@
   "files": [
     "src",
     "assets",
+    "install.ps1",
+    "install.sh",
     "README.md",
+    "CONTRIBUTING.md",
     "LICENSE"
   ],
   "keywords": [

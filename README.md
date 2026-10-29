@@ -97,7 +97,80 @@ Config locations:
 > Paths must be **absolute** or start with `.` (relative to the config file).
 > `~/...` is treated as an npm package name, so expand it manually.
 
-### 1. Clone and install dependencies
+### Quick install (one command)
+
+The installer checks your opencode version, downloads the plugin, installs its
+dependencies, and registers both config entries for you.
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/MeanLesss/opencode-file-browser/main/install.ps1 | iex
+```
+
+**macOS / Linux:**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/MeanLesss/opencode-file-browser/main/install.sh | sh
+```
+
+What it does:
+
+1. Detects `opencode --version` and refuses opencode 2.x with a clear message.
+2. Clones the repo to `~/opencode-file-browser` when it is not already there.
+3. Installs the runtime dependencies (`npm`, or `bun` as a fallback).
+4. Runs `opencode plugin <path> -g`, which writes the server entry to
+   `opencode.jsonc` and the TUI entry to `tui.json` while preserving existing
+   JSONC content.
+5. Prints the restart reminder.
+
+Already cloned the repo? Run the script from inside it instead:
+
+```powershell
+.\install.ps1
+```
+
+```sh
+./install.sh
+```
+
+Useful options:
+
+| Windows | macOS / Linux | Meaning |
+| --- | --- | --- |
+| `.\install.ps1 -Project C:\path\to\project` | `./install.sh --project /path/to/project` | Write project configs instead of global configs. |
+| `.\install.ps1 -SkipDeps` | `./install.sh --skip-deps` | Skip the dependency install. |
+| `.\install.ps1 -NoClone` | `./install.sh --no-clone` | Never clone; fail if the repo is not already present. |
+
+The scripts are short and readable: [install.ps1](./install.ps1),
+[install.sh](./install.sh). If you prefer to do it by hand, use the manual
+steps below.
+
+Safe to re-run: `opencode plugin` leaves an existing entry untouched, so you can
+use the installer to verify or repair an installation.
+
+### Manual install
+
+There are two halves, and opencode reads them from different config files:
+
+| Half | Adds | Config file |
+| --- | --- | --- |
+| Server plugin | `file_tree`, `file_open`, `file_search` | `opencode.json(c)` |
+| TUI plugin | `/files` dialog and its actions | `tui.json(c)` |
+
+Point both files at the same plugin folder if you want both halves.
+
+Config locations:
+
+- **Global:** `~/.config/opencode/` — on Windows,
+  `C:\Users\<you>\.config\opencode\`.
+- **Project:** `opencode.json(c)` and `tui.json(c)` in the project root, or
+  inside `.opencode/`.
+
+> Paths must be **absolute** or start with `.` (relative to the config file).
+> `~/...` is treated as an npm package name, so expand it manually.
+
+#### 1. Clone and install dependencies
 
 **Windows (PowerShell):**
 
@@ -117,7 +190,7 @@ npm install
 
 Already have the repo? Run `npm install` inside it once.
 
-### 2. Enable the agent tools
+#### 2. Enable the agent tools
 
 Add the plugin to your global `opencode.jsonc`:
 
@@ -131,7 +204,7 @@ Add the plugin to your global `opencode.jsonc`:
 On macOS or Linux use your absolute path, for example
 `"/home/you/opencode-file-browser"`.
 
-### 3. Enable the `/files` dialog
+#### 3. Enable the `/files` dialog
 
 Add the same path to your global `tui.json`:
 
@@ -142,7 +215,7 @@ Add the same path to your global `tui.json`:
 }
 ```
 
-### 4. Restart opencode
+#### 4. Restart opencode
 
 Quit opencode completely and start it again. Then type `/files`.
 
@@ -317,6 +390,10 @@ otherwise `directory`). Paths that try to escape with `..` are rejected.
 | --- | --- |
 | `/files` does not appear | The TUI half goes in `tui.json`, not only `opencode.jsonc`. Check the path is absolute or starts with `.`. Restart opencode. |
 | Agent tools are missing | Add the plugin to `opencode.json(c)` too; that file controls server plugins. |
+| Installer says “Could not run opencode --version” | Run it from a shell where `opencode --version` works, or install opencode 1.x and reopen the terminal. |
+| Installer says the folder already exists | The default clone location `~/opencode-file-browser` exists but is not this repo. Move it, or clone elsewhere and run the installer from there. |
+| Two copies of the plugin are installed | Remove the old path from `opencode.jsonc` and `tui.json`; duplicate plugin ids make one copy fail to load. |
+| PowerShell blocks `.\install.ps1` | Use the one-line install, or run `Set-ExecutionPolicy -Scope Process Bypass` in that window first. |
 | `Could not switch to ...` | Make sure the folder exists and is readable. Older builds fall back to opening a new session. |
 | Copy says “Clipboard unavailable” | Install a clipboard tool, or copy the path from the toast. |
 | New terminal does not open | Put `opencode` on `PATH`, or set `OPENCODE_BIN`. |

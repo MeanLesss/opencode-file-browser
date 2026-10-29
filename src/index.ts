@@ -1,5 +1,7 @@
-import { Plugin } from "@opencode/plugin"
-import { readdirSync, readFileSync, statSync } from "node:fs"
+import type { Plugin } from "@opencode-ai/plugin"
+import { tool } from "@opencode-ai/plugin"
+import type { Dirent } from "node:fs"
+import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative, resolve, sep } from "node:path"
 
 const MAX_TREE_ENTRIES = 500
@@ -37,18 +39,18 @@ function buildTree(
   prefix: string,
 ): void {
   if (depth < 0 || out.length >= MAX_TREE_ENTRIES) return
-  let entries: any[]
+  let entries: Dirent[]
   try {
     entries = readdirSync(dir, { withFileTypes: true })
   } catch {
     return
   }
 
-  entries.sort((a: any, b: any) => {
+  entries.sort((a, b) => {
     const ad = a.isDirectory() ? 0 : 1
     const bd = b.isDirectory() ? 0 : 1
     if (ad !== bd) return ad - bd
-    return String(a.name).localeCompare(String(b.name))
+    return a.name.localeCompare(b.name)
   })
 
   for (const entry of entries) {
@@ -56,9 +58,9 @@ function buildTree(
       out.push(prefix + "… (truncated)")
       return
     }
-    if (!showHidden && String(entry.name).startsWith(".")) continue
+    if (!showHidden && entry.name.startsWith(".")) continue
 
-    const full = join(dir, String(entry.name))
+    const full = join(dir, entry.name)
     const relName = relative(root, full)
     if (entry.isDirectory()) {
       out.push(prefix + relName + sep)
@@ -69,53 +71,22 @@ function buildTree(
   }
 }
 
-function searchFiles(
-  root: string,
-  dir: string,
-  query: string,
-  showHidden: boolean,
-  out: string[],
-): void {
-  if (out.length >= MAX_SEARCH_RESULTS) return
-  let entries: any[]
-  try {
-    entries = readdirSync(dir, { withFileTypes: true })
-  } catch {
-    return
-  }
-  for (const entry of entries) {
-    if (out.length >= MAX_SEARCH_RESULTS) return
-    if (!showHidden && String(entry.name).startsWith(".")) continue
-    const full = join(dir, String(entry.name))
-    if (entry.isDirectory()) {
-      searchFiles(root, full, query, showHidden, out)
-    } else if (String(entry.name).toLowerCase().includes(query)) {
-      out.push(relative(root, full))
-    }
-  }
-}
+const FileBrowserPlugin: Plugin = async ({ directory, worktree }) => {
+  const root = resolve(worktree || directory)
 
-export default Plugin.define({
-  id: "opencode-file-browser",
-  async setup(ctx) {
-    const root = resolve(ctx.location?.directory ?? process.cwd())
-
-    await ctx.tool.transform((editor) => {
-      editor.add({
-        name: "file_tree",
+  return {
+    tool: {
+      file_tree: tool({
         description:
-          "Browse the project as a folder/file tree. Optional relative `path`, `depth` (default 3), and `showHidden`.",
-        input: {
-          type: "object",
-          properties: {
-            path: { type: "string" },
-            depth: { type: "string" },
-            showHidden: { type: "string" },
-          },
-          additionalProperties: false,
+          "Browse the project as a folder/file tree. Pass an optional relative `path` to start below a subfolder, " +
+          '`depth` (default 3) to limit how deep it goes, and `showHidden` ("true"/"false") to include dotfiles. ' +
+          "Use this to explore the project structure before opening files.",
+        args: {
+          path: tool.schema.string().optional(),
+          depth: tool.schema.string().optional(),
+          showHidden: tool.schema.string().optional(),
         },
-        async execute(input) {
-          const args = input as { path?: string; depth?: string; showHidden?: string }
+        async execute(args) {
           const depth = Math.max(
             0,
             Math.min(10, Number.parseInt(args.depth ?? String(DEFAULT_DEPTH), 10) || DEFAULT_DEPTH),
@@ -123,26 +94,27 @@ export default Plugin.define({
           const target = safePath(root, args.path)
           const out: string[] = []
           buildTree(root, target, depth, toBool(args.showHidden), out, "")
-          return { content: `Project root: ${root}\n` + (out.length ? out.join("\n") : "(empty)") }
+          return `Project root: ${root}\n` + (out.length ? out.join("\n") : "(empty)")
         },
-      })
+      }),
 
-      editor.add({
-        name: "file_open",
-        description: "Open and return the text content of a file inside the project. `path` is relative to the project root.",
-        input: {
-          type: "object",
-          properties: { path: { type: "string" } },
-          required: ["path"],
-          additionalProperties: false,
+      file_open: tool({
+        description:
+          "Open and return the text content of a file inside the project. The `path` is relative to the project root. " +
+          "Use this after file_tree/file_search to read a specific file.",
+        args: {
+          path: tool.schema.string(),
         },
-        async execute(input) {
-          const args = input as { path: string }
+        async execute(args) {
           const target = safePath(root, args.path)
           const st = statSync(target)
-          if (st.isDirectory()) throw new Error(`"${args.path}" is a directory — use file_tree to list it.`)
+          if (st.isDirectory()) {
+            throw new Error(`"${args.path}" is a directory — use file_tree to list it.`)
+          }
           const bytes = readFileSync(target)
-          if (!isText(bytes)) return { content: `[binary file: ${st.size} bytes] ${args.path}` }
+          if (!isText(bytes)) {
+            return `[binary file: ${st.size} bytes] ${args.path}`
+          }
           let text = bytes.toString("utf8")
           let truncated = false
           if (bytes.length > MAX_OPEN_BYTES) {
@@ -150,43 +122,60 @@ export default Plugin.define({
             truncated = true
           }
           const lines = text.split(/\r?\n/).length
-          return {
-            content:
-              `--- ${args.path} (${bytes.length} bytes, ${lines} lines) ---\n` +
-              text +
-              (truncated ? `\n… (truncated at ${MAX_OPEN_BYTES} bytes)` : ""),
-          }
+          return (
+            `--- ${args.path} (${bytes.length} bytes, ${lines} lines) ---\n` +
+            text +
+            (truncated ? `\n… (truncated at ${MAX_OPEN_BYTES} bytes)` : "")
+          )
         },
-      })
+      }),
 
-      editor.add({
-        name: "file_search",
-        description: "Find files by name (case-insensitive substring). Optional relative `path` and `showHidden`.",
-        input: {
-          type: "object",
-          properties: {
-            query: { type: "string" },
-            path: { type: "string" },
-            showHidden: { type: "string" },
-          },
-          required: ["query"],
-          additionalProperties: false,
+      file_search: tool({
+        description:
+          "Find files in the project by name (case-insensitive substring match on the file name). " +
+          "Pass an optional relative `path` to restrict the search to a subfolder, and `showHidden` to include dotfiles.",
+        args: {
+          query: tool.schema.string(),
+          path: tool.schema.string().optional(),
+          showHidden: tool.schema.string().optional(),
         },
-        async execute(input) {
-          const args = input as { query: string; path?: string; showHidden?: string }
+        async execute(args) {
           const query = (args.query ?? "").trim().toLowerCase()
           if (!query) throw new Error("file_search requires a non-empty `query`.")
           const start = safePath(root, args.path)
+          const showHidden = toBool(args.showHidden)
           const results: string[] = []
-          searchFiles(root, start, query, toBool(args.showHidden), results)
-          const truncated = results.length >= MAX_SEARCH_RESULTS
-          return {
-            content:
-              `Found ${results.length} file(s) matching "${query}"${truncated ? " (capped)" : ""}:\n` +
-              (results.length ? results.join("\n") : "(none)"),
+
+          const walk = (dir: string): void => {
+            if (results.length >= MAX_SEARCH_RESULTS) return
+            let entries: Dirent[]
+            try {
+              entries = readdirSync(dir, { withFileTypes: true })
+            } catch {
+              return
+            }
+            for (const entry of entries) {
+              if (results.length >= MAX_SEARCH_RESULTS) return
+              if (!showHidden && entry.name.startsWith(".")) continue
+              const full = join(dir, entry.name)
+              if (entry.isDirectory()) {
+                walk(full)
+              } else if (entry.name.toLowerCase().includes(query)) {
+                results.push(relative(root, full))
+              }
+            }
           }
+
+          walk(start)
+          const truncated = results.length >= MAX_SEARCH_RESULTS
+          return (
+            `Found ${results.length} file(s) matching "${query}"${truncated ? " (capped)" : ""}:\n` +
+            (results.length ? results.join("\n") : "(none)")
+          )
         },
-      })
-    })
-  },
-})
+      }),
+    },
+  }
+}
+
+export default { id: "opencode-file-browser", server: FileBrowserPlugin }

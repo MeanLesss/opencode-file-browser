@@ -53,7 +53,7 @@ Include:
 - How you tested it.
 - Screenshots or short recordings for UI changes when possible.
 
-CI runs `npm run typecheck` on Node 20 and 22. Please make sure it passes before
+CI runs `npm run typecheck` on Node 22 and 24. Please make sure it passes before
 requesting review.
 
 ## Reporting bugs
